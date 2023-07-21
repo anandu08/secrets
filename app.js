@@ -1,15 +1,20 @@
 //jshint esversion:6
+require('dotenv').config()
 const express=require("express");
 const bodyParser=require("body-parser")
 const ejs=require("ejs")
 const mongoose = require('mongoose');
+const encrypt=require("mongoose-encryption")
 
 // Connect MongoDB at default port 27017.
 mongoose.connect('mongodb://localhost:27017/users', {useNewUrlParser: true});
-const userSchema={
+const userSchema=new mongoose.Schema({
     email: String,
     password: String
-};
+});
+
+
+userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields:['password']});
 const User= new mongoose.model('user',userSchema);
 const app=express();
 app.use(express.static("public"));
@@ -21,7 +26,18 @@ res.render("home");
 app.get("/login",function(req,res){
     res.render("login");
 });
+app.post("/login",function(req,res){
+const username=req.body.username;
+const password=req.body.password;
+User.findOne({email: username}).then((found) => {
+    if (found===null)
+        res.render("login");
+    else if(found.password===password)
+        res.render("secrets");
+});
 
+
+})
 app.route('/register')
 .get(function(req,res){
 
