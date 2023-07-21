@@ -4,7 +4,9 @@ const express=require("express");
 const bodyParser=require("body-parser")
 const ejs=require("ejs")
 const mongoose = require('mongoose');
-const encrypt=require("mongoose-encryption")
+const md5=require("md5");
+
+
 
 // Connect MongoDB at default port 27017.
 mongoose.connect('mongodb://localhost:27017/users', {useNewUrlParser: true});
@@ -14,7 +16,6 @@ const userSchema=new mongoose.Schema({
 });
 
 
-userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields:['password']});
 const User= new mongoose.model('user',userSchema);
 const app=express();
 app.use(express.static("public"));
@@ -28,7 +29,7 @@ app.get("/login",function(req,res){
 });
 app.post("/login",function(req,res){
 const username=req.body.username;
-const password=req.body.password;
+const password=md5(req.body.password);
 User.findOne({email: username}).then((found) => {
     if (found===null)
         res.render("login");
@@ -49,7 +50,7 @@ app.route('/register')
 .post((req,res)=>{
 let newUser=new User({
     email:req.body.username,
-    password:req.body.password
+    password:md5(req.body.password)
 });
 newUser.save().then((doc)=>{
     if(doc!=newUser)
